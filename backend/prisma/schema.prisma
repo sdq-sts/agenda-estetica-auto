@@ -1,0 +1,153 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// MODELS - Sistema de Agendamento
+// ============================================
+
+model Cliente {
+  id          String   @id @default(cuid())
+  nome        String
+  telefone    String   @unique
+  whatsapp    String?
+  email       String?  @unique
+  cpfCnpj     String?
+  observacoes String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  veiculos     Veiculo[]
+  agendamentos Agendamento[]
+
+  @@index([telefone])
+  @@index([email])
+  @@map("clientes")
+}
+
+model Veiculo {
+  id        String   @id @default(cuid())
+  marca     String
+  modelo    String
+  ano       Int
+  placa     String   @unique
+  cor       String?
+  clienteId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  cliente      Cliente       @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  agendamentos Agendamento[]
+
+  @@index([placa])
+  @@index([clienteId])
+  @@map("veiculos")
+}
+
+model Servico {
+  id              String   @id @default(cuid())
+  nome            String
+  descricao       String?
+  categoria       String
+  duracaoMinutos  Int
+  preco           Float
+  ativo           Boolean  @default(true)
+  imagemUrl       String?
+  observacoes     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  agendamentos AgendamentoServico[]
+
+  @@index([categoria])
+  @@index([ativo])
+  @@map("servicos")
+}
+
+model Agendamento {
+  id          String   @id @default(cuid())
+  dataHora    DateTime
+  status      String   @default("PENDENTE")
+  clienteId   String
+  veiculoId   String?
+  observacoes String?
+  valorTotal  Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  cliente       Cliente              @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  veiculo       Veiculo?             @relation(fields: [veiculoId], references: [id], onDelete: SetNull)
+  servicos      AgendamentoServico[]
+  notificacoes  Notificacao[]
+
+  @@index([dataHora])
+  @@index([status])
+  @@index([clienteId])
+  @@index([veiculoId])
+  @@map("agendamentos")
+}
+
+model AgendamentoServico {
+  id            String @id @default(cuid())
+  agendamentoId String
+  servicoId     String
+  preco         Float
+
+  // Relations
+  agendamento Agendamento @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
+  servico     Servico     @relation(fields: [servicoId], references: [id], onDelete: Restrict)
+
+  @@unique([agendamentoId, servicoId])
+  @@index([agendamentoId])
+  @@index([servicoId])
+  @@map("agendamento_servicos")
+}
+
+model Notificacao {
+  id            String   @id @default(cuid())
+  agendamentoId String
+  tipo          String
+  status        String   @default("PENDENTE")
+  agendadaPara  DateTime?
+  enviadaEm     DateTime?
+  mensagem      String
+  createdAt     DateTime @default(now())
+
+  // Relations
+  agendamento Agendamento @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
+
+  @@index([agendamentoId])
+  @@index([status])
+  @@map("notificacoes")
+}
+
+model Configuracao {
+  id        String   @id @default(cuid())
+  chave     String   @unique
+  valor     String
+  descricao String?
+  updatedAt DateTime @updatedAt
+
+  @@index([chave])
+  @@map("configuracoes")
+}
+
+// ============================================
+// ENUMS - Implemented as strings for SQLite
+// Valid values:
+// - StatusAgendamento: PENDENTE, CONFIRMADO, EM_ANDAMENTO, CONCLUIDO, CANCELADO, NAO_COMPARECEU
+// - TipoNotificacao: CONFIRMACAO, LEMBRETE_24H, LEMBRETE_2H, CONCLUSAO, AVALIACAO, CANCELAMENTO
+// - StatusNotificacao: PENDENTE, ENVIADA, FALHA, CANCELADA
+// ============================================
