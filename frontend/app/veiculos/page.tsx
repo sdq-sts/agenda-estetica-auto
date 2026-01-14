@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { BottomNav } from '@/components/bottom-nav';
+import { MobileVehicleCard } from '@/components/mobile-vehicle-card';
 import { veiculosAPI, clientesAPI } from '@/lib/api';
 import { ArrowLeft, Plus, Edit, Trash2, Car, User, Calendar, Palette } from 'lucide-react';
 
@@ -198,71 +199,86 @@ export default function VeiculosPage() {
               </ModernCardContent>
             </ModernCard>
           ) : (
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {veiculos.map((v) => (
-                <ModernCard key={v.id} className="group">
-                  <ModernCardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <ModernCardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                          <Car className="w-6 h-6" />
-                          {v.marca} {v.modelo}
-                        </ModernCardTitle>
-                        <Badge className="mt-2 text-xs font-mono bg-gray-100 text-gray-900 hover:bg-gray-200 border-0">
-                          {v.placa}
-                        </Badge>
-                      </div>
-                    </div>
-                  </ModernCardHeader>
-                  <ModernCardContent className="space-y-4">
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-center gap-3 text-gray-700">
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <Calendar className="w-4 h-4 text-gray-700" />
-                        </div>
-                        <span className="font-medium">Ano: {v.ano}</span>
-                      </div>
-                      {v.cor && (
-                        <div className="flex items-center gap-3 text-gray-700">
-                          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <Palette className="w-4 h-4 text-gray-700" />
-                          </div>
-                          <span className="font-medium">{v.cor}</span>
-                        </div>
-                      )}
-                      {v.cliente && (
-                        <div className="flex items-center gap-3 text-gray-700">
-                          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <User className="w-4 h-4 text-gray-700" />
-                          </div>
-                          <span className="font-medium">{v.cliente.nome}</span>
-                        </div>
-                      )}
-                    </div>
+            <>
+              {/* Mobile Cards */}
+              <div className="flex flex-col gap-3 md:hidden">
+                {veiculos.map((v) => (
+                  <MobileVehicleCard
+                    key={v.id}
+                    veiculo={v}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
 
-                    <div className="flex gap-2 pt-3 border-t border-gray-100">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(v)}
-                        className="flex-1 min-h-[44px] hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300 transition-colors rounded-xl font-medium"
-                      >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(v.id)}
-                        className="min-h-[44px] min-w-[44px] rounded-xl hover:scale-105 transition-transform"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </ModernCardContent>
-                </ModernCard>
-              ))}
-            </div>
+              {/* Desktop Cards */}
+              <div className="hidden md:grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {veiculos.map((v) => (
+                  <ModernCard key={v.id} className="group">
+                    <ModernCardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <ModernCardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <Car className="w-6 h-6" />
+                            {v.marca} {v.modelo}
+                          </ModernCardTitle>
+                          <Badge className="mt-2 text-xs font-mono bg-gray-100 text-gray-900 hover:bg-gray-200 border-0">
+                            {v.placa}
+                          </Badge>
+                        </div>
+                      </div>
+                    </ModernCardHeader>
+                    <ModernCardContent className="space-y-4">
+                      <div className="space-y-3 text-sm">
+                        <div className="flex items-center gap-3 text-gray-700">
+                          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <Calendar className="w-4 h-4 text-gray-700" />
+                          </div>
+                          <span className="font-medium">Ano: {v.ano}</span>
+                        </div>
+                        {v.cor && (
+                          <div className="flex items-center gap-3 text-gray-700">
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                              <Palette className="w-4 h-4 text-gray-700" />
+                            </div>
+                            <span className="font-medium">{v.cor}</span>
+                          </div>
+                        )}
+                        {v.cliente && (
+                          <div className="flex items-center gap-3 text-gray-700">
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                              <User className="w-4 h-4 text-gray-700" />
+                            </div>
+                            <span className="font-medium">{v.cliente.nome}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 pt-3 border-t border-gray-100">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(v)}
+                          className="flex-1 min-h-[44px] hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300 transition-colors rounded-xl font-medium"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(v.id)}
+                          className="min-h-[44px] min-w-[44px] rounded-xl hover:scale-105 transition-transform"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </ModernCardContent>
+                  </ModernCard>
+                ))}
+              </div>
+            </>
           )}
         </main>
       </div>

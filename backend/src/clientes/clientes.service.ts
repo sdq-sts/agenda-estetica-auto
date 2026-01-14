@@ -12,10 +12,10 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 export class ClientesService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createClienteDto: CreateClienteDto) {
+  async create(createClienteDto: CreateClienteDto, tenantId: string) {
     // Check if telefone already exists
     const existingCliente = await this.prisma.cliente.findUnique({
-      where: { telefone: createClienteDto.telefone },
+      where: { tenantId_telefone: { tenantId, telefone: createClienteDto.telefone } },
     });
 
     if (existingCliente) {
@@ -25,7 +25,7 @@ export class ClientesService {
     // Check if email already exists (if provided)
     if (createClienteDto.email) {
       const existingEmail = await this.prisma.cliente.findUnique({
-        where: { email: createClienteDto.email },
+        where: { tenantId_email: { tenantId, email: createClienteDto.email } },
       });
 
       if (existingEmail) {
@@ -34,16 +34,17 @@ export class ClientesService {
     }
 
     return this.prisma.cliente.create({
-      data: createClienteDto,
+      data: { ...createClienteDto, tenantId },
     });
   }
 
-  async findAll(paginationDto: PaginationDto) {
+  async findAll(paginationDto: PaginationDto, tenantId: string) {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
 
     const [data, total] = await Promise.all([
       this.prisma.cliente.findMany({
+        where: { tenantId },
         skip,
         take: limit,
         include: {
@@ -54,7 +55,7 @@ export class ClientesService {
         },
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.cliente.count(),
+      this.prisma.cliente.count({ where: { tenantId } }),
     ]);
 
     return {
@@ -68,9 +69,9 @@ export class ClientesService {
     };
   }
 
-  async findOne(id: string) {
-    const cliente = await this.prisma.cliente.findUnique({
-      where: { id },
+  async findOne(id: string, tenantId: string) {
+    const cliente = await this.prisma.cliente.findFirst({
+      where: { id, tenantId },
       include: {
         veiculos: true,
         agendamentos: {
@@ -95,9 +96,10 @@ export class ClientesService {
     return cliente;
   }
 
-  async search(q: string) {
+  async search(q: string, tenantId: string) {
     const clientes = await this.prisma.cliente.findMany({
       where: {
+        tenantId,
         OR: [
           { nome: { contains: q } },
           { telefone: { contains: q } },
@@ -120,14 +122,14 @@ export class ClientesService {
     return { data: clientes };
   }
 
-  async update(id: string, updateClienteDto: UpdateClienteDto) {
+  async update(id: string, updateClienteDto: UpdateClienteDto, tenantId: string) {
     // Check if cliente exists
-    await this.findOne(id);
+    await this.findOne(id, tenantId);
 
     // Check for telefone conflict (if updating)
     if (updateClienteDto.telefone) {
       const existingCliente = await this.prisma.cliente.findUnique({
-        where: { telefone: updateClienteDto.telefone },
+        where: { tenantId_telefone: { tenantId, telefone: updateClienteDto.telefone } },
       });
 
       if (existingCliente && existingCliente.id !== id) {
@@ -138,7 +140,7 @@ export class ClientesService {
     // Check for email conflict (if updating)
     if (updateClienteDto.email) {
       const existingEmail = await this.prisma.cliente.findUnique({
-        where: { email: updateClienteDto.email },
+        where: { tenantId_email: { tenantId, email: updateClienteDto.email } },
       });
 
       if (existingEmail && existingEmail.id !== id) {
@@ -152,13 +154,14 @@ export class ClientesService {
     });
   }
 
-  async remove(id: string) {
+  async remove(id: string, tenantId: string) {
     // Check if cliente exists
-    await this.findOne(id);
+    await this.findOne(id, tenantId);
 
     // Check if cliente has active agendamentos
     const activeAgendamentos = await this.prisma.agendamento.findFirst({
       where: {
+        tenantId,
         clienteId: id,
         status: {
           in: ['PENDENTE', 'CONFIRMADO', 'EM_ANDAMENTO'],

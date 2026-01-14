@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  Request,
 } from '@nestjs/common';
 import { AgendamentosService } from './agendamentos.service';
 import { CreateAgendamentoDto } from './dto/create-agendamento.dto';
@@ -21,20 +22,22 @@ export class AgendamentosController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createAgendamentoDto: CreateAgendamentoDto) {
-    return this.agendamentosService.create(createAgendamentoDto);
+  create(@Body() createAgendamentoDto: CreateAgendamentoDto, @Request() req) {
+    return this.agendamentosService.create(createAgendamentoDto, req.tenantId);
   }
 
   @Get()
   findAll(
     @Query() paginationDto: PaginationDto,
-    @Query('status') status?: string,
-    @Query('clienteId') clienteId?: string,
-    @Query('dataInicio') dataInicio?: string,
-    @Query('dataFim') dataFim?: string,
+    @Query('status') status: string | undefined,
+    @Query('clienteId') clienteId: string | undefined,
+    @Query('dataInicio') dataInicio: string | undefined,
+    @Query('dataFim') dataFim: string | undefined,
+    @Request() req,
   ) {
     return this.agendamentosService.findAll(
       paginationDto,
+      req.tenantId,
       status,
       clienteId,
       dataInicio,
@@ -43,26 +46,27 @@ export class AgendamentosController {
   }
 
   @Get('disponiveis')
-  getHorariosDisponiveis(@Query('data') data: string) {
-    return this.agendamentosService.getHorariosDisponiveis(data);
+  getHorariosDisponiveis(@Query('data') data: string, @Request() req) {
+    return this.agendamentosService.getHorariosDisponiveis(data, req.tenantId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.agendamentosService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req) {
+    return this.agendamentosService.findOne(id, req.tenantId);
   }
 
   @Patch(':id')
   update(
     @Param('id') id: string,
     @Body() updateAgendamentoDto: UpdateAgendamentoDto,
+    @Request() req,
   ) {
-    return this.agendamentosService.update(id, updateAgendamentoDto);
+    return this.agendamentosService.update(id, updateAgendamentoDto, req.tenantId);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.agendamentosService.remove(id);
+  remove(@Param('id') id: string, @Request() req) {
+    return this.agendamentosService.remove(id, req.tenantId);
   }
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
+import { AuthGuard } from "@/components/auth-guard";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -21,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${outfit.variable} antialiased`}>
-        {children}
+        <AuthGuard>{children}</AuthGuard>
       </body>
     </html>
   );

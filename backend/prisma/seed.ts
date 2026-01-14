@@ -1,132 +1,172 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Iniciando seed do banco de dados...');
+  console.log('🌱 Seeding database...');
 
-  // Create services
+  // 1. Criar tenant demo
+  const tenant = await prisma.tenant.upsert({
+    where: { slug: 'demo' },
+    update: {},
+    create: {
+      nome: 'Lava-Jato Demo',
+      slug: 'demo',
+      email: 'contato@demo.com',
+      whatsapp: '11999999999',
+      plano: 'FREE',
+      ativo: true,
+    },
+  });
+
+  console.log('✅ Tenant criado:', tenant.slug);
+
+  // 2. Criar usuário admin
+  const senhaHash = await bcrypt.hash('admin123', 10);
+
+  const user = await prisma.user.upsert({
+    where: { email: 'admin@demo.com' },
+    update: {},
+    create: {
+      email: 'admin@demo.com',
+      senha: senhaHash,
+      nome: 'Administrador',
+      role: 'OWNER',
+      tenantId: tenant.id,
+    },
+  });
+
+  console.log('✅ Usuário criado:', user.email);
+
+  // 3. Criar serviços de exemplo
   const servicos = await Promise.all([
     prisma.servico.create({
       data: {
         nome: 'Lavagem Simples',
-        descricao: 'Lavagem externa completa do veículo',
+        descricao: 'Lavagem externa do veículo',
         categoria: 'Lavagem',
         duracaoMinutos: 30,
         preco: 50,
         ativo: true,
+        tenantId: tenant.id,
       },
     }),
     prisma.servico.create({
       data: {
         nome: 'Lavagem Completa',
-        descricao: 'Lavagem externa e interna completa',
+        descricao: 'Lavagem externa e interna',
         categoria: 'Lavagem',
         duracaoMinutos: 60,
-        preco: 100,
+        preco: 80,
         ativo: true,
+        tenantId: tenant.id,
       },
     }),
     prisma.servico.create({
       data: {
         nome: 'Polimento Técnico',
-        descricao: 'Polimento profissional com cera de alta qualidade',
-        categoria: 'Polimento',
-        duracaoMinutos: 120,
+        descricao: 'Polimento profissional da pintura',
+        categoria: 'Estética',
+        duracaoMinutos: 180,
         preco: 300,
         ativo: true,
+        tenantId: tenant.id,
       },
     }),
     prisma.servico.create({
       data: {
         nome: 'Higienização Interna',
-        descricao: 'Limpeza profunda do interior com aspiração e higienização',
+        descricao: 'Limpeza profunda do interior',
         categoria: 'Higienização',
-        duracaoMinutos: 90,
+        duracaoMinutos: 120,
         preco: 150,
         ativo: true,
-      },
-    }),
-    prisma.servico.create({
-      data: {
-        nome: 'Cristalização de Vidros',
-        descricao: 'Aplicação de película protetora nos vidros',
-        categoria: 'Proteção',
-        duracaoMinutos: 45,
-        preco: 200,
-        ativo: true,
+        tenantId: tenant.id,
       },
     }),
   ]);
 
   console.log(`✅ ${servicos.length} serviços criados`);
 
-  // Create clients
-  const cliente1 = await prisma.cliente.create({
-    data: {
-      nome: 'João Silva',
-      telefone: '11999999999',
-      whatsapp: '11999999999',
-      email: 'joao.silva@email.com',
-      observacoes: 'Cliente VIP - Prefere atendimento matutino',
-    },
-  });
+  // 4. Criar clientes de exemplo
+  const clientes = await Promise.all([
+    prisma.cliente.create({
+      data: {
+        nome: 'João Silva',
+        telefone: '11987654321',
+        whatsapp: '11987654321',
+        email: 'joao@email.com',
+        tenantId: tenant.id,
+      },
+    }),
+    prisma.cliente.create({
+      data: {
+        nome: 'Maria Santos',
+        telefone: '11976543210',
+        whatsapp: '11976543210',
+        email: 'maria@email.com',
+        tenantId: tenant.id,
+      },
+    }),
+  ]);
 
-  const cliente2 = await prisma.cliente.create({
-    data: {
-      nome: 'Maria Santos',
-      telefone: '11988888888',
-      whatsapp: '11988888888',
-      email: 'maria.santos@email.com',
-    },
-  });
+  console.log(`✅ ${clientes.length} clientes criados`);
 
-  const cliente3 = await prisma.cliente.create({
-    data: {
-      nome: 'Pedro Oliveira',
-      telefone: '11977777777',
-    },
-  });
+  // 5. Criar veículos
+  const veiculos = await Promise.all([
+    prisma.veiculo.create({
+      data: {
+        marca: 'Toyota',
+        modelo: 'Corolla',
+        ano: 2022,
+        placa: 'ABC1234',
+        cor: 'Prata',
+        clienteId: clientes[0].id,
+        tenantId: tenant.id,
+      },
+    }),
+    prisma.veiculo.create({
+      data: {
+        marca: 'Honda',
+        modelo: 'Civic',
+        ano: 2021,
+        placa: 'XYZ5678',
+        cor: 'Preto',
+        clienteId: clientes[1].id,
+        tenantId: tenant.id,
+      },
+    }),
+  ]);
 
-  console.log('✅ 3 clientes criados');
+  console.log(`✅ ${veiculos.length} veículos criados`);
 
-  // Create vehicles
-  const veiculo1 = await prisma.veiculo.create({
-    data: {
-      marca: 'Toyota',
-      modelo: 'Corolla',
-      ano: 2023,
-      placa: 'ABC1234',
-      cor: 'Prata',
-      clienteId: cliente1.id,
-    },
-  });
+  // 6. Criar configurações de horário
+  const diasSemana = [
+    'domingo',
+    'segunda',
+    'terca',
+    'quarta',
+    'quinta',
+    'sexta',
+    'sabado',
+  ];
 
-  const veiculo2 = await prisma.veiculo.create({
-    data: {
-      marca: 'Honda',
-      modelo: 'Civic',
-      ano: 2024,
-      placa: 'XYZ5678',
-      cor: 'Preto',
-      clienteId: cliente2.id,
-    },
-  });
+  for (let i = 0; i < diasSemana.length; i++) {
+    const valor = i === 0 ? '' : '08:00-18:00'; // Domingo fechado
+    await prisma.configuracao.create({
+      data: {
+        chave: `horario_${diasSemana[i]}`,
+        valor,
+        descricao: `Horário de funcionamento ${diasSemana[i]}`,
+        tenantId: tenant.id,
+      },
+    });
+  }
 
-  await prisma.veiculo.create({
-    data: {
-      marca: 'Volkswagen',
-      modelo: 'Gol',
-      ano: 2020,
-      placa: 'DEF9012',
-      cor: 'Branco',
-      clienteId: cliente3.id,
-    },
-  });
+  console.log('✅ Configurações de horário criadas');
 
-  console.log('✅ 3 veículos criados');
-
-  // Create appointments
+  // 7. Criar agendamentos de exemplo
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(14, 0, 0, 0);
@@ -135,18 +175,19 @@ async function main() {
     data: {
       dataHora: tomorrow,
       status: 'CONFIRMADO',
-      clienteId: cliente1.id,
-      veiculoId: veiculo1.id,
-      valorTotal: 400,
+      clienteId: clientes[0].id,
+      veiculoId: veiculos[0].id,
+      valorTotal: 380,
       observacoes: 'Cliente pediu atenção especial aos bancos',
+      tenantId: tenant.id,
       servicos: {
         create: [
           {
             servicoId: servicos[1].id, // Lavagem Completa
-            preco: 100,
+            preco: 80,
           },
           {
-            servicoId: servicos[2].id, // Polimento Técnico
+            servicoId: servicos[2].id, // Polimento
             preco: 300,
           },
         ],
@@ -162,18 +203,15 @@ async function main() {
     data: {
       dataHora: dayAfterTomorrow,
       status: 'PENDENTE',
-      clienteId: cliente2.id,
-      veiculoId: veiculo2.id,
-      valorTotal: 250,
+      clienteId: clientes[1].id,
+      veiculoId: veiculos[1].id,
+      valorTotal: 150,
+      tenantId: tenant.id,
       servicos: {
         create: [
           {
-            servicoId: servicos[0].id, // Lavagem Simples
-            preco: 50,
-          },
-          {
-            servicoId: servicos[4].id, // Cristalização
-            preco: 200,
+            servicoId: servicos[3].id, // Higienização
+            preco: 150,
           },
         ],
       },
@@ -182,12 +220,16 @@ async function main() {
 
   console.log('✅ 2 agendamentos criados');
 
-  console.log('\n🎉 Seed completed successfully!\n');
+  console.log('🎉 Seed completo!');
+  console.log('');
+  console.log('📝 Credenciais de acesso:');
+  console.log('   Email: admin@demo.com');
+  console.log('   Senha: admin123');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Erro no seed:', e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

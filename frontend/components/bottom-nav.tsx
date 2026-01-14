@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, Car, Wrench, Calendar } from 'lucide-react';
+import { Home, Users, Car, Wrench, Calendar, CalendarDays } from 'lucide-react';
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -11,7 +11,7 @@ export function BottomNav() {
     { href: '/clientes', icon: Users, label: 'Clientes' },
     { href: '/veiculos', icon: Car, label: 'Veículos' },
     { href: '/servicos', icon: Wrench, label: 'Serviços' },
-    { href: '/agendamentos', icon: Calendar, label: 'Agenda' },
+    { href: '/calendario', icon: CalendarDays, label: 'Calendário' },
   ];
 
   return (

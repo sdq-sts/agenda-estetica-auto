@@ -8,17 +8,17 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 export class ServicosService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createServicoDto: CreateServicoDto) {
+  async create(createServicoDto: CreateServicoDto, tenantId: string) {
     return this.prisma.servico.create({
-      data: createServicoDto,
+      data: { ...createServicoDto, tenantId },
     });
   }
 
-  async findAll(paginationDto: PaginationDto, ativo?: boolean, categoria?: string) {
+  async findAll(paginationDto: PaginationDto, tenantId: string, ativo?: boolean, categoria?: string) {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = { tenantId };
     if (ativo !== undefined) {
       where.ativo = typeof ativo === 'string' ? ativo === 'true' : ativo;
     }
@@ -47,9 +47,9 @@ export class ServicosService {
     };
   }
 
-  async findOne(id: string) {
-    const servico = await this.prisma.servico.findUnique({
-      where: { id },
+  async findOne(id: string, tenantId: string) {
+    const servico = await this.prisma.servico.findFirst({
+      where: { id, tenantId },
     });
 
     if (!servico) {
@@ -59,8 +59,8 @@ export class ServicosService {
     return servico;
   }
 
-  async update(id: string, updateServicoDto: UpdateServicoDto) {
-    await this.findOne(id);
+  async update(id: string, updateServicoDto: UpdateServicoDto, tenantId: string) {
+    await this.findOne(id, tenantId);
 
     return this.prisma.servico.update({
       where: { id },
@@ -68,8 +68,8 @@ export class ServicosService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantId: string) {
+    await this.findOne(id, tenantId);
 
     // Soft delete: just mark as inactive
     await this.prisma.servico.update({

@@ -12,22 +12,22 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 export class AgendamentosService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createAgendamentoDto: CreateAgendamentoDto) {
+  async create(createAgendamentoDto: CreateAgendamentoDto, tenantId: string) {
     const { clienteId, veiculoId, dataHora, servicos, observacoes } =
       createAgendamentoDto;
 
-    // Validate cliente exists
-    const cliente = await this.prisma.cliente.findUnique({
-      where: { id: clienteId },
+    // Validate cliente exists and belongs to tenant
+    const cliente = await this.prisma.cliente.findFirst({
+      where: { id: clienteId, tenantId },
     });
     if (!cliente) {
       throw new NotFoundException('Cliente não encontrado');
     }
 
-    // Validate veiculo exists and belongs to cliente
+    // Validate veiculo exists, belongs to tenant and to cliente
     if (veiculoId) {
-      const veiculo = await this.prisma.veiculo.findUnique({
-        where: { id: veiculoId },
+      const veiculo = await this.prisma.veiculo.findFirst({
+        where: { id: veiculoId, tenantId },
       });
       if (!veiculo) {
         throw new NotFoundException('Veículo não encontrado');
@@ -37,10 +37,10 @@ export class AgendamentosService {
       }
     }
 
-    // Validate all servicos exist
+    // Validate all servicos exist and belong to tenant
     for (const s of servicos) {
-      const servico = await this.prisma.servico.findUnique({
-        where: { id: s.servicoId },
+      const servico = await this.prisma.servico.findFirst({
+        where: { id: s.servicoId, tenantId },
       });
       if (!servico) {
         throw new NotFoundException(
@@ -68,12 +68,13 @@ export class AgendamentosService {
       0,
     );
 
-    // Check for time conflicts
+    // Check for time conflicts (only within same tenant)
     const endTime = new Date(
       dataHoraDate.getTime() + duracaoTotal * 60 * 1000,
     );
     const conflictingAgendamento = await this.prisma.agendamento.findFirst({
       where: {
+        tenantId,
         dataHora: {
           gte: dataHoraDate,
           lt: endTime,
@@ -99,6 +100,7 @@ export class AgendamentosService {
         veiculoId,
         observacoes,
         valorTotal,
+        tenantId,
         servicos: {
           create: servicos.map((s) => ({
             servicoId: s.servicoId,
@@ -128,6 +130,7 @@ export class AgendamentosService {
 
   async findAll(
     paginationDto: PaginationDto,
+    tenantId: string,
     status?: string,
     clienteId?: string,
     dataInicio?: string,
@@ -136,7 +139,7 @@ export class AgendamentosService {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: any = { tenantId };
     if (status) {
       where.status = status;
     }
@@ -189,9 +192,9 @@ export class AgendamentosService {
     };
   }
 
-  async findOne(id: string) {
-    const agendamento = await this.prisma.agendamento.findUnique({
-      where: { id },
+  async findOne(id: string, tenantId: string) {
+    const agendamento = await this.prisma.agendamento.findFirst({
+      where: { id, tenantId },
       include: {
         cliente: true,
         veiculo: true,
@@ -211,7 +214,7 @@ export class AgendamentosService {
     return agendamento;
   }
 
-  async getHorariosDisponiveis(data: string) {
+  async getHorariosDisponiveis(data: string, tenantId: string) {
     const dataDate = new Date(data);
     const horarios: string[] = [];
 
@@ -230,9 +233,10 @@ export class AgendamentosService {
           continue;
         }
 
-        // Check for conflicts
+        // Check for conflicts (only within same tenant)
         const conflito = await this.prisma.agendamento.findFirst({
           where: {
+            tenantId,
             dataHora: horario,
             status: {
               notIn: ['CANCELADO', 'NAO_COMPARECEU'],
@@ -249,8 +253,8 @@ export class AgendamentosService {
     return { data: horarios };
   }
 
-  async update(id: string, updateAgendamentoDto: UpdateAgendamentoDto) {
-    await this.findOne(id);
+  async update(id: string, updateAgendamentoDto: UpdateAgendamentoDto, tenantId: string) {
+    await this.findOne(id, tenantId);
 
     // If updating dataHora, check for conflicts
     if (updateAgendamentoDto.dataHora) {
@@ -261,6 +265,7 @@ export class AgendamentosService {
 
       const conflito = await this.prisma.agendamento.findFirst({
         where: {
+          tenantId,
           id: { not: id },
           dataHora: dataHoraDate,
           status: {
@@ -280,8 +285,8 @@ export class AgendamentosService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantId: string) {
+    await this.findOne(id, tenantId);
 
     // Soft delete: change status to CANCELADO
     await this.prisma.agendamento.update({

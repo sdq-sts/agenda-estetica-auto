@@ -12,17 +12,19 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 export class VeiculosService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createVeiculoDto: CreateVeiculoDto) {
+  async create(createVeiculoDto: CreateVeiculoDto, tenantId: string) {
+    // Check if placa already exists for this tenant
     const existingPlaca = await this.prisma.veiculo.findUnique({
-      where: { placa: createVeiculoDto.placa },
+      where: { tenantId_placa: { tenantId, placa: createVeiculoDto.placa } },
     });
 
     if (existingPlaca) {
       throw new ConflictException('Placa já cadastrada');
     }
 
-    const clienteExists = await this.prisma.cliente.findUnique({
-      where: { id: createVeiculoDto.clienteId },
+    // Check if cliente exists and belongs to this tenant
+    const clienteExists = await this.prisma.cliente.findFirst({
+      where: { id: createVeiculoDto.clienteId, tenantId },
     });
 
     if (!clienteExists) {
@@ -30,18 +32,18 @@ export class VeiculosService {
     }
 
     return this.prisma.veiculo.create({
-      data: createVeiculoDto,
+      data: { ...createVeiculoDto, tenantId },
       include: {
         cliente: true,
       },
     });
   }
 
-  async findAll(paginationDto: PaginationDto, clienteId?: string) {
+  async findAll(paginationDto: PaginationDto, tenantId: string, clienteId?: string) {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
 
-    const where = clienteId ? { clienteId } : {};
+    const where = clienteId ? { tenantId, clienteId } : { tenantId };
 
     const [data, total] = await Promise.all([
       this.prisma.veiculo.findMany({
@@ -73,9 +75,9 @@ export class VeiculosService {
     };
   }
 
-  async findOne(id: string) {
-    const veiculo = await this.prisma.veiculo.findUnique({
-      where: { id },
+  async findOne(id: string, tenantId: string) {
+    const veiculo = await this.prisma.veiculo.findFirst({
+      where: { id, tenantId },
       include: {
         cliente: true,
         agendamentos: {
@@ -99,12 +101,14 @@ export class VeiculosService {
     return veiculo;
   }
 
-  async update(id: string, updateVeiculoDto: UpdateVeiculoDto) {
-    await this.findOne(id);
+  async update(id: string, updateVeiculoDto: UpdateVeiculoDto, tenantId: string) {
+    // Check if veiculo exists
+    await this.findOne(id, tenantId);
 
+    // Check for placa conflict (if updating)
     if (updateVeiculoDto.placa) {
       const existingPlaca = await this.prisma.veiculo.findUnique({
-        where: { placa: updateVeiculoDto.placa },
+        where: { tenantId_placa: { tenantId, placa: updateVeiculoDto.placa } },
       });
 
       if (existingPlaca && existingPlaca.id !== id) {
@@ -118,8 +122,10 @@ export class VeiculosService {
     });
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, tenantId: string) {
+    // Check if veiculo exists
+    await this.findOne(id, tenantId);
+
     await this.prisma.veiculo.delete({ where: { id } });
     return { message: 'Veículo deletado com sucesso' };
   }

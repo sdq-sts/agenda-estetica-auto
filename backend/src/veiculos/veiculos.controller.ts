@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  Request,
 } from '@nestjs/common';
 import { VeiculosService } from './veiculos.service';
 import { CreateVeiculoDto } from './dto/create-veiculo.dto';
@@ -21,28 +22,28 @@ export class VeiculosController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createVeiculoDto: CreateVeiculoDto) {
-    return this.veiculosService.create(createVeiculoDto);
+  create(@Body() createVeiculoDto: CreateVeiculoDto, @Request() req) {
+    return this.veiculosService.create(createVeiculoDto, req.tenantId);
   }
 
   @Get()
-  findAll(@Query() paginationDto: PaginationDto, @Query('clienteId') clienteId?: string) {
-    return this.veiculosService.findAll(paginationDto, clienteId);
+  findAll(@Query() paginationDto: PaginationDto, @Query('clienteId') clienteId: string | undefined, @Request() req) {
+    return this.veiculosService.findAll(paginationDto, req.tenantId, clienteId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.veiculosService.findOne(id);
+  findOne(@Param('id') id: string, @Request() req) {
+    return this.veiculosService.findOne(id, req.tenantId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateVeiculoDto: UpdateVeiculoDto) {
-    return this.veiculosService.update(id, updateVeiculoDto);
+  update(@Param('id') id: string, @Body() updateVeiculoDto: UpdateVeiculoDto, @Request() req) {
+    return this.veiculosService.update(id, updateVeiculoDto, req.tenantId);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.veiculosService.remove(id);
+  remove(@Param('id') id: string, @Request() req) {
+    return this.veiculosService.remove(id, req.tenantId);
   }
 }

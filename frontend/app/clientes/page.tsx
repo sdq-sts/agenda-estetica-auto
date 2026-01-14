@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { BottomNav } from '@/components/bottom-nav';
+import { MobileClientCard } from '@/components/mobile-client-card';
 import { clientesAPI } from '@/lib/api';
 import { ArrowLeft, Plus, Edit, Trash2, Phone, Mail, Car, Calendar, Users } from 'lucide-react';
 
@@ -211,74 +212,89 @@ export default function ClientesPage() {
               </ModernCardContent>
             </ModernCard>
           ) : (
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {clientes.map((cliente) => (
-                <ModernCard key={cliente.id} className="group">
-                  <ModernCardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <ModernCardTitle className="text-xl font-bold text-gray-900">{cliente.nome}</ModernCardTitle>
-                        {cliente.observacoes && (
-                          <Badge variant="outline" className="mt-2 text-xs border-blue-200 text-blue-700 bg-blue-50">
-                            {cliente.observacoes}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </ModernCardHeader>
-                  <ModernCardContent className="space-y-4">
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-center gap-3 text-gray-700">
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <Phone className="w-4 h-4 text-gray-700" />
+            <>
+              {/* Mobile Cards */}
+              <div className="flex flex-col gap-3 md:hidden">
+                {clientes.map((cliente) => (
+                  <MobileClientCard
+                    key={cliente.id}
+                    cliente={cliente}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+
+              {/* Desktop Cards */}
+              <div className="hidden md:grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {clientes.map((cliente) => (
+                  <ModernCard key={cliente.id} className="group">
+                    <ModernCardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <ModernCardTitle className="text-xl font-bold text-gray-900">{cliente.nome}</ModernCardTitle>
+                          {cliente.observacoes && (
+                            <Badge variant="outline" className="mt-2 text-xs border-blue-200 text-blue-700 bg-blue-50">
+                              {cliente.observacoes}
+                            </Badge>
+                          )}
                         </div>
-                        <span className="font-medium">{cliente.telefone}</span>
                       </div>
-                      {cliente.email && (
+                    </ModernCardHeader>
+                    <ModernCardContent className="space-y-4">
+                      <div className="space-y-3 text-sm">
                         <div className="flex items-center gap-3 text-gray-700">
                           <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <Mail className="w-4 h-4 text-gray-700" />
+                            <Phone className="w-4 h-4 text-gray-700" />
                           </div>
-                          <span className="truncate font-medium">{cliente.email}</span>
+                          <span className="font-medium">{cliente.telefone}</span>
                         </div>
-                      )}
-                      <div className="flex items-center gap-3 text-gray-700">
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <Car className="w-4 h-4 text-gray-700" />
+                        {cliente.email && (
+                          <div className="flex items-center gap-3 text-gray-700">
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                              <Mail className="w-4 h-4 text-gray-700" />
+                            </div>
+                            <span className="truncate font-medium">{cliente.email}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-3 text-gray-700">
+                          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <Car className="w-4 h-4 text-gray-700" />
+                          </div>
+                          <span className="font-medium">{cliente.veiculos?.length || 0} veículo(s)</span>
                         </div>
-                        <span className="font-medium">{cliente.veiculos?.length || 0} veículo(s)</span>
+                        <div className="flex items-center gap-3 text-gray-700">
+                          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <Calendar className="w-4 h-4 text-gray-700" />
+                          </div>
+                          <span className="font-medium">{cliente._count?.agendamentos || 0} agendamento(s)</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 text-gray-700">
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <Calendar className="w-4 h-4 text-gray-700" />
-                        </div>
-                        <span className="font-medium">{cliente._count?.agendamentos || 0} agendamento(s)</span>
-                      </div>
-                    </div>
 
-                    <div className="flex gap-2 pt-3 border-t border-gray-100">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(cliente)}
-                        className="flex-1 min-h-[44px] hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300 transition-colors rounded-xl font-medium"
-                      >
-                        <Edit className="w-4 h-4 mr-1" />
-                        Editar
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(cliente.id)}
-                        className="min-h-[44px] min-w-[44px] rounded-xl hover:scale-105 transition-transform"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </ModernCardContent>
-                </ModernCard>
-              ))}
-            </div>
+                      <div className="flex gap-2 pt-3 border-t border-gray-100">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(cliente)}
+                          className="flex-1 min-h-[44px] hover:bg-gray-100 hover:text-gray-900 hover:border-gray-300 transition-colors rounded-xl font-medium"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(cliente.id)}
+                          className="min-h-[44px] min-w-[44px] rounded-xl hover:scale-105 transition-transform"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </ModernCardContent>
+                  </ModernCard>
+                ))}
+              </div>
+            </>
           )}
         </main>
       </div>

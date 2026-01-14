@@ -11,24 +11,77 @@ datasource db {
 }
 
 // ============================================
+// MODELS - Multi-tenancy & Auth
+// ============================================
+
+model Tenant {
+  id               String   @id @default(cuid())
+  nome             String
+  slug             String   @unique
+  whatsapp         String?
+  email            String   @unique
+  plano            String   @default("FREE") // FREE, BASIC, PRO, ENTERPRISE
+  ativo            Boolean  @default(true)
+  stripeCustomerId String?  @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  usuarios         User[]
+  clientes         Cliente[]
+  veiculos         Veiculo[]
+  servicos         Servico[]
+  agendamentos     Agendamento[]
+  bloqueios        BloqueioHorario[]
+  configuracoes    Configuracao[]
+
+  @@index([slug])
+  @@map("tenants")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  senha     String   // bcrypt hash
+  nome      String
+  role      String   @default("ATENDENTE") // OWNER, ADMIN, ATENDENTE
+  ativo     Boolean  @default(true)
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([email])
+  @@map("users")
+}
+
+// ============================================
 // MODELS - Sistema de Agendamento
 // ============================================
 
 model Cliente {
   id          String   @id @default(cuid())
   nome        String
-  telefone    String   @unique
+  telefone    String
   whatsapp    String?
-  email       String?  @unique
+  email       String?
   cpfCnpj     String?
   observacoes String?
+  tenantId    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   veiculos     Veiculo[]
   agendamentos Agendamento[]
 
+  @@unique([tenantId, telefone])
+  @@unique([tenantId, email])
+  @@index([tenantId])
   @@index([telefone])
   @@index([email])
   @@map("clientes")
@@ -39,16 +92,20 @@ model Veiculo {
   marca     String
   modelo    String
   ano       Int
-  placa     String   @unique
+  placa     String
   cor       String?
   clienteId String
+  tenantId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   cliente      Cliente       @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   agendamentos Agendamento[]
 
+  @@unique([tenantId, placa])
+  @@index([tenantId])
   @@index([placa])
   @@index([clienteId])
   @@map("veiculos")
@@ -64,12 +121,15 @@ model Servico {
   ativo           Boolean  @default(true)
   imagemUrl       String?
   observacoes     String?
+  tenantId        String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   // Relations
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   agendamentos AgendamentoServico[]
 
+  @@index([tenantId])
   @@index([categoria])
   @@index([ativo])
   @@map("servicos")
@@ -83,15 +143,18 @@ model Agendamento {
   veiculoId   String?
   observacoes String?
   valorTotal  Float?
+  tenantId    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
+  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   cliente       Cliente              @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   veiculo       Veiculo?             @relation(fields: [veiculoId], references: [id], onDelete: SetNull)
   servicos      AgendamentoServico[]
   notificacoes  Notificacao[]
 
+  @@index([tenantId])
   @@index([dataHora])
   @@index([status])
   @@index([clienteId])
@@ -135,13 +198,44 @@ model Notificacao {
 
 model Configuracao {
   id        String   @id @default(cuid())
-  chave     String   @unique
+  chave     String
   valor     String
   descricao String?
+  tenantId  String
   updatedAt DateTime @updatedAt
 
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, chave])
+  @@index([tenantId])
   @@index([chave])
   @@map("configuracoes")
+}
+
+model BloqueioHorario {
+  id              String    @id @default(cuid())
+  tipo            String    // "PONTUAL" ou "RECORRENTE"
+  diaSemana       Int?      // 0-6 (domingo-sábado) - apenas para RECORRENTE
+  dataEspecifica  DateTime? // apenas para PONTUAL
+  horaInicio      String    // formato "HH:mm" (ex: "10:00")
+  horaFim         String    // formato "HH:mm" (ex: "12:00")
+  diaInteiro      Boolean   @default(false) // se true, bloqueia o dia todo
+  motivo          String?   // "Dentista", "Reunião", "Feriado", etc
+  ativo           Boolean   @default(true)
+  tenantId        String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tipo])
+  @@index([dataEspecifica])
+  @@index([diaSemana])
+  @@index([ativo])
+  @@map("bloqueios_horario")
 }
 
 // ============================================
@@ -150,4 +244,5 @@ model Configuracao {
 // - StatusAgendamento: PENDENTE, CONFIRMADO, EM_ANDAMENTO, CONCLUIDO, CANCELADO, NAO_COMPARECEU
 // - TipoNotificacao: CONFIRMACAO, LEMBRETE_24H, LEMBRETE_2H, CONCLUSAO, AVALIACAO, CANCELAMENTO
 // - StatusNotificacao: PENDENTE, ENVIADA, FALHA, CANCELADA
+// - TipoBloqueio: PONTUAL, RECORRENTE
 // ============================================

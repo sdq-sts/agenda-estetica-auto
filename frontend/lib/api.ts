@@ -1,13 +1,26 @@
+import { auth } from './auth';
+
 const API_URL = 'http://localhost:3333/api';
 
 async function fetchAPI(endpoint: string, options?: RequestInit) {
+  // Get auth header
+  const authHeader = auth.getAuthHeader();
+
   const res = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...authHeader,
       ...options?.headers,
     },
   });
+
+  // Handle 401 - redirect to login
+  if (res.status === 401 && typeof window !== 'undefined') {
+    auth.logout();
+    window.location.href = '/login';
+    throw new Error('Sessão expirada. Faça login novamente.');
+  }
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: 'Erro na requisição' }));
@@ -53,4 +66,29 @@ export const agendamentosAPI = {
   create: (data: any) => fetchAPI('/agendamentos', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => fetchAPI(`/agendamentos/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   delete: (id: string) => fetchAPI(`/agendamentos/${id}`, { method: 'DELETE' }),
+};
+
+// Configurações
+export const configuracoesAPI = {
+  getHorarios: () => fetchAPI('/configuracoes'),
+  saveHorariosPadrao: (horarios: Record<string, string | null>) =>
+    fetchAPI('/configuracoes/horarios/padrao', { method: 'POST', body: JSON.stringify(horarios) }),
+  getOne: (chave: string) => fetchAPI(`/configuracoes/${chave}`),
+  save: (chave: string, valor: string, descricao?: string) =>
+    fetchAPI(`/configuracoes/${chave}`, { method: 'POST', body: JSON.stringify({ valor, descricao }) }),
+};
+
+// Bloqueios de Horário
+export const bloqueiosAPI = {
+  getAll: (tipo?: string, ativo?: boolean) => {
+    const params = new URLSearchParams();
+    if (tipo) params.append('tipo', tipo);
+    if (ativo !== undefined) params.append('ativo', String(ativo));
+    return fetchAPI(`/bloqueios${params.toString() ? `?${params}` : ''}`);
+  },
+  getByDate: (date: Date) => fetchAPI(`/bloqueios/data/${date.toISOString()}`),
+  getOne: (id: string) => fetchAPI(`/bloqueios/${id}`),
+  create: (data: any) => fetchAPI('/bloqueios', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: any) => fetchAPI(`/bloqueios/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  delete: (id: string) => fetchAPI(`/bloqueios/${id}`, { method: 'DELETE' }),
 };
