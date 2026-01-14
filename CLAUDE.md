@@ -94,6 +94,7 @@ container max-w-6xl px-6
 
 ### Para Backend/API:
 - **`docs/api/API-SPEC.md`** - Especificação da API
+- **`docs/architecture/AUTHENTICATION.md`** - Sistema de autenticação completo
 - `backend/prisma/schema.prisma` - Schema do banco
 - `docs/architecture/ARCHITECTURE.md` - Estrutura dos módulos
 

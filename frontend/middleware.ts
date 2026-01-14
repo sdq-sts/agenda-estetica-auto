@@ -1,26 +1,22 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+/**
+ * Next.js Middleware for Route Protection
+ *
+ * NOTE: This middleware currently does minimal work because we use localStorage
+ * for JWT storage (handled client-side by AuthGuard component).
+ *
+ * Future improvement: Migrate to httpOnly cookies for better security, then
+ * this middleware can handle server-side authentication checks.
+ *
+ * Current behavior:
+ * - Allows all requests through
+ * - AuthGuard component (client-side) handles actual auth checks
+ * - API calls redirect to /login on 401 (see lib/api.ts)
+ */
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('auth_token')?.value;
-
-  // Public paths that don't require authentication
-  const publicPaths = ['/login'];
-  const isPublicPath = publicPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
-
-  // If accessing a public path and already authenticated, redirect to home
-  if (isPublicPath && token) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
-  // If accessing a protected path without authentication, redirect to login
-  if (!isPublicPath && !token) {
-    // Check localStorage on client side instead
-    return NextResponse.next();
-  }
-
+  // Allow all requests - AuthGuard handles protection client-side
   return NextResponse.next();
 }
 
@@ -31,8 +27,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public files (public folder)
+     * - public files (png, jpg, svg, etc)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(png|jpg|jpeg|svg|gif|webp)$).*)',
   ],
 };

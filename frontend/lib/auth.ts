@@ -19,10 +19,14 @@ interface AuthResponse {
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 
+const API_URL = typeof window !== 'undefined'
+  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333')
+  : 'http://localhost:3333';
+
 export const auth = {
   // Login
   async login(email: string, senha: string): Promise<AuthResponse> {
-    const response = await fetch('http://localhost:3333/api/auth/login', {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
