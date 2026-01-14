@@ -1,0 +1,262 @@
+/* Calendário Customizado - Refined Functional Design System */
+
+.rbc-calendar {
+  @apply font-sans;
+  height: 600px;
+}
+
+/* Toolbar Header */
+.rbc-toolbar {
+  @apply flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-200;
+}
+
+.rbc-toolbar button {
+  @apply px-4 py-2 rounded-xl font-medium text-sm transition-all duration-300 min-h-[44px];
+  @apply bg-white border border-gray-200 text-gray-700 shadow-soft;
+  @apply hover:shadow-medium hover:border-gray-300 hover:-translate-y-0.5 active:scale-[0.98];
+}
+
+.rbc-toolbar button:active,
+.rbc-toolbar button.rbc-active {
+  @apply bg-gradient-to-br from-blue-600 to-blue-700 text-white border-blue-700 shadow-medium;
+}
+
+.rbc-toolbar-label {
+  @apply text-2xl font-outfit font-bold text-gray-900 tracking-tight;
+}
+
+/* Header da Semana */
+.rbc-header {
+  @apply bg-gradient-to-br from-gray-50 to-gray-100/50 border-b border-gray-200 py-3 px-2;
+  @apply text-sm font-semibold text-gray-500 uppercase tracking-wider;
+}
+
+.rbc-header + .rbc-header {
+  @apply border-l border-gray-200/60;
+}
+
+/* Time Gutter (coluna de horas) */
+.rbc-time-gutter {
+  @apply text-xs font-medium text-gray-500;
+}
+
+.rbc-timeslot-group {
+  @apply border-b border-gray-100;
+}
+
+.rbc-time-slot {
+  @apply border-t border-gray-100/50;
+}
+
+/* Grid */
+.rbc-time-content {
+  @apply border-t border-gray-200;
+}
+
+.rbc-day-slot {
+  @apply border-l border-gray-200/60;
+}
+
+.rbc-day-slot:first-child {
+  @apply border-l-0;
+}
+
+/* Eventos - Base */
+.rbc-event {
+  @apply rounded-lg border-l-4 shadow-soft px-2 py-1 text-sm;
+  @apply transition-all duration-300;
+  @apply hover:shadow-medium hover:scale-[1.02] hover:z-10;
+  cursor: pointer;
+}
+
+.rbc-event-label {
+  @apply text-xs font-medium opacity-80;
+}
+
+.rbc-event-content {
+  @apply font-outfit font-semibold text-sm;
+}
+
+/* Cores por Status */
+/* Confirmado - Azul */
+.rbc-event.status-confirmado {
+  @apply bg-blue-50 border-l-blue-600 text-blue-900;
+}
+
+.rbc-event.status-confirmado:hover {
+  @apply bg-blue-100;
+}
+
+/* Pendente - Amarelo/Amber */
+.rbc-event.status-pendente {
+  @apply bg-amber-50 border-l-amber-600 text-amber-900;
+}
+
+.rbc-event.status-pendente:hover {
+  @apply bg-amber-100;
+}
+
+/* Cancelado - Vermelho */
+.rbc-event.status-cancelado {
+  @apply bg-red-50 border-l-red-600 text-red-900 opacity-60;
+}
+
+.rbc-event.status-cancelado:hover {
+  @apply bg-red-100 opacity-80;
+}
+
+/* Concluído - Verde */
+.rbc-event.status-concluido {
+  @apply bg-green-50 border-l-green-600 text-green-900;
+}
+
+.rbc-event.status-concluido:hover {
+  @apply bg-green-100;
+}
+
+/* Bloqueado - Cinza */
+.rbc-event.status-bloqueado {
+  @apply bg-gray-200 border-l-gray-600 text-gray-800 opacity-70;
+  cursor: not-allowed;
+}
+
+.rbc-event.status-bloqueado:hover {
+  @apply bg-gray-300 opacity-80;
+}
+
+/* Selected Event */
+.rbc-event.rbc-selected {
+  @apply shadow-medium scale-[1.02] z-20;
+}
+
+/* Hoje */
+.rbc-today {
+  @apply bg-blue-50/30;
+}
+
+/* Current Time Indicator - Linha vermelha mostrando hora atual */
+.rbc-current-time-indicator {
+  @apply bg-red-600 h-[3px] shadow-md;
+  position: relative;
+  z-index: 10;
+}
+
+/* Bolinha na linha do horário atual */
+.rbc-current-time-indicator::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: -4px;
+  width: 11px;
+  height: 11px;
+  background: #dc2626;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px white, 0 0 8px rgba(220, 38, 38, 0.4);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px white, 0 0 8px rgba(220, 38, 38, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 2px white, 0 0 12px rgba(220, 38, 38, 0.8);
+  }
+}
+
+/* Slots Selection */
+.rbc-slot-selection {
+  @apply bg-blue-100/40 border-2 border-blue-500;
+}
+
+/* Overlay (Month View - não usado mas mantido) */
+.rbc-overlay {
+  @apply bg-white rounded-xl shadow-lift border border-gray-200 p-4;
+}
+
+.rbc-overlay-header {
+  @apply font-outfit font-bold text-gray-900 border-b border-gray-200 pb-2 mb-2;
+}
+
+/* Time Column */
+.rbc-time-column {
+  @apply min-h-full;
+}
+
+/* Allday Cell */
+.rbc-allday-cell {
+  @apply bg-gray-50/50;
+}
+
+/* Show More Link */
+.rbc-show-more {
+  @apply text-blue-600 font-medium text-xs hover:text-blue-700 hover:underline;
+}
+
+/* Mobile Responsiveness - Melhorado para 9/10 usabilidade */
+@media (max-width: 768px) {
+  .rbc-calendar {
+    height: 550px;
+  }
+
+  .rbc-toolbar {
+    @apply flex-col items-stretch gap-3 pb-3;
+  }
+
+  .rbc-toolbar button {
+    @apply text-sm px-4 py-3 min-h-[44px] font-semibold;
+  }
+
+  .rbc-toolbar-label {
+    @apply text-xl font-outfit font-bold text-center order-first;
+  }
+
+  .rbc-btn-group {
+    @apply flex justify-center gap-3;
+  }
+
+  .rbc-header {
+    @apply text-xs py-3 px-1 font-bold;
+  }
+
+  .rbc-event {
+    @apply text-xs px-2 py-1.5 font-medium;
+  }
+
+  .rbc-event-content {
+    @apply text-xs leading-snug font-semibold;
+  }
+
+  .rbc-time-gutter {
+    @apply text-xs w-14 font-medium;
+  }
+
+  .rbc-time-slot {
+    @apply min-h-[40px];
+  }
+
+  /* Touch targets adequados para mobile */
+  .rbc-event {
+    @apply min-h-[44px];
+  }
+
+  /* Melhorar contraste e legibilidade */
+  .rbc-today {
+    @apply bg-blue-50/50;
+  }
+}
+
+/* Tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .rbc-toolbar-label {
+    @apply text-xl;
+  }
+
+  .rbc-header {
+    @apply text-xs;
+  }
+
+  .rbc-event {
+    @apply text-xs;
+  }
+}
