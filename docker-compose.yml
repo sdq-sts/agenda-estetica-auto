@@ -1,0 +1,133 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: agenda-postgres
+    environment:
+      POSTGRES_DB: agenda_estetica
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend NestJS
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agenda-backend
+    ports:
+      - "3333:3333"
+    environment:
+      # Database
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/agenda_estetica
+
+      # JWT
+      JWT_SECRET: dev-secret-key-change-in-production
+      JWT_EXPIRES_IN: 7d
+
+      # Evolution API
+      EVOLUTION_API_URL: http://evolution:8080
+      EVOLUTION_API_KEY: evolution-dev-key-123
+
+      # App
+      NODE_ENV: development
+      PORT: 3333
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - /app/dist
+    command: npm run start:dev
+
+  # Evolution API (WhatsApp)
+  evolution:
+    image: atendai/evolution-api:latest
+    container_name: agenda-evolution
+    ports:
+      - "8080:8080"
+    environment:
+      # Server
+      SERVER_TYPE: http
+      SERVER_PORT: 8080
+
+      # CORS
+      CORS_ORIGIN: "*"
+      CORS_METHODS: "POST,GET,PUT,DELETE"
+      CORS_CREDENTIALS: "true"
+
+      # Database (usa o mesmo PostgreSQL)
+      DATABASE_ENABLED: true
+      DATABASE_CONNECTION_URI: postgresql://postgres:postgres@postgres:5432/evolution
+      DATABASE_CONNECTION_CLIENT_NAME: evolution_db
+      DATABASE_SAVE_DATA_INSTANCE: true
+      DATABASE_SAVE_DATA_NEW_MESSAGE: true
+      DATABASE_SAVE_MESSAGE_UPDATE: true
+      DATABASE_SAVE_DATA_CONTACTS: true
+      DATABASE_SAVE_DATA_CHATS: true
+
+      # Authentication
+      AUTHENTICATION_API_KEY: evolution-dev-key-123
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: true
+
+      # Webhook Global (para n8n no futuro)
+      WEBHOOK_GLOBAL_URL: ""
+      WEBHOOK_GLOBAL_ENABLED: false
+      WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS: false
+
+      # Log
+      LOG_LEVEL: ERROR,WARN,DEBUG,INFO,LOG,VERBOSE,DARK,WEBHOOKS
+      LOG_COLOR: true
+      LOG_BAILEYS: error
+
+      # QR Code
+      QRCODE_LIMIT: 30
+      QRCODE_COLOR: "#198754"
+
+      # Instance limits
+      DEL_INSTANCE: false
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - evolution_instances:/evolution/instances
+      - evolution_store:/evolution/store
+    restart: unless-stopped
+
+  # Frontend Next.js (opcional - normalmente vai no Vercel)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: agenda-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3333
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+
+volumes:
+  postgres_data:
+    driver: local
+  evolution_instances:
+    driver: local
+  evolution_store:
+    driver: local
