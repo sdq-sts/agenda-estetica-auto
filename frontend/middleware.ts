@@ -20,15 +20,9 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
+// Simplified matcher - exclude Next.js internals and static files
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (png, jpg, svg, etc)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(png|jpg|jpeg|svg|gif|webp)$).*)',
+    '/((?!_next|api|favicon.ico).*)',
   ],
 };
