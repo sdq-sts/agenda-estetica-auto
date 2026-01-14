@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, User, Car, Wrench, ChevronDown, DollarSign } from 'lucide-react';
+import { Calendar, User, Car, Wrench, ChevronDown, DollarSign, Clock, CreditCard } from 'lucide-react';
 import { ModernCard } from '@/components/ui/modern-card';
 import { StatusBadge, StatusType } from '@/components/ui/status-badge';
 import { format } from 'date-fns';
@@ -26,7 +26,23 @@ interface Agendamento {
   }>;
   observacoes?: string | null;
   valorTotal?: number | null;
+  statusPagamento?: string | null;
+  formaPagamento?: string | null;
+  valorPago?: number | null;
 }
+
+const paymentStatusMap: Record<string, { color: string; icon: any; label: string }> = {
+  PAGO: { color: 'bg-green-100 text-green-700 border-green-200', icon: DollarSign, label: 'PAGO' },
+  PENDENTE: { color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: Clock, label: 'PENDENTE' },
+  REEMBOLSADO: { color: 'bg-gray-100 text-gray-700 border-gray-200', icon: CreditCard, label: 'REEMBOLSADO' },
+};
+
+const formaPagamentoMap: Record<string, string> = {
+  PIX: 'PIX',
+  DINHEIRO: 'Dinheiro',
+  CARTAO: 'Cartão',
+  DEBITO: 'Débito',
+};
 
 interface MobileAgendamentoCardProps {
   agendamento: Agendamento;
@@ -46,7 +62,7 @@ export function MobileAgendamentoCard({ agendamento, statusInfo }: MobileAgendam
         {/* Header Compacto */}
         <div className="flex items-start gap-3">
           {/* Ícone de Data */}
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex flex-col items-center justify-center flex-shrink-0 shadow-soft">
+          <div className="w-12 h-12 rounded-xl bg-blue-600 flex flex-col items-center justify-center flex-shrink-0 shadow-soft">
             <span className="text-[10px] font-semibold text-white/80 uppercase">
               {format(dataHora, 'MMM', { locale: ptBR })}
             </span>
@@ -76,11 +92,35 @@ export function MobileAgendamentoCard({ agendamento, statusInfo }: MobileAgendam
 
         {/* Valor em Destaque (sempre visível) */}
         {agendamento.valorTotal && (
-          <div className="mt-3 flex items-center justify-between px-3 py-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100 rounded-lg">
-            <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">Valor</span>
-            <span className="text-lg font-outfit font-bold text-green-700">
-              R$ {agendamento.valorTotal.toFixed(2)}
-            </span>
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+              <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Valor</span>
+              <span className="text-lg font-outfit font-bold text-gray-900">
+                R$ {agendamento.valorTotal.toFixed(2)}
+              </span>
+            </div>
+            {agendamento.statusPagamento && (
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const paymentInfo = paymentStatusMap[agendamento.statusPagamento] || paymentStatusMap.PENDENTE;
+                  const Icon = paymentInfo.icon;
+                  return (
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${paymentInfo.color}`}>
+                      <Icon className="w-3 h-3" />
+                      {paymentInfo.label}
+                    </span>
+                  );
+                })()}
+                {agendamento.formaPagamento && agendamento.statusPagamento === 'PAGO' && (
+                  <span className="text-xs text-gray-600">{formaPagamentoMap[agendamento.formaPagamento] || agendamento.formaPagamento}</span>
+                )}
+              </div>
+            )}
+            {agendamento.valorPago !== null && agendamento.valorPago !== undefined && agendamento.valorPago !== agendamento.valorTotal && (
+              <p className="text-xs text-orange-600 px-2">
+                ⚠ Valor pago: R$ {agendamento.valorPago.toFixed(2)}
+              </p>
+            )}
           </div>
         )}
 

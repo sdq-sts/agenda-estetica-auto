@@ -65,6 +65,11 @@ export function AgendamentoFormModal({
   const [servicosSelecionados, setServicosSelecionados] = useState<string[]>(initialData?.servicoIds || []);
   const [observacoes, setObservacoes] = useState(initialData?.observacoes || '');
 
+  // Payment state
+  const [statusPagamento, setStatusPagamento] = useState<string>('PENDENTE');
+  const [formaPagamento, setFormaPagamento] = useState<string>('');
+  const [valorPago, setValorPago] = useState<string>('');
+
   // Load initial data
   useEffect(() => {
     if (isOpen) {
@@ -130,17 +135,38 @@ export function AgendamentoFormModal({
       return;
     }
 
+    // Validate payment fields
+    if (statusPagamento === 'PAGO') {
+      if (!formaPagamento) {
+        alert('Selecione a forma de pagamento');
+        return;
+      }
+      if (!valorPago || parseFloat(valorPago) <= 0) {
+        alert('Informe o valor pago');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
-      const payload = {
+      const payload: any = {
         dataHora: dataHora.toISOString(),
         clienteId,
         veiculoId,
-        servicos: servicosSelecionados.map(id => ({ servicoId: id })),
+        servicos: servicosSelecionados.map(id => {
+          const servico = servicos.find(s => s.id === id);
+          return { servicoId: id, preco: servico?.preco || 0 };
+        }),
         observacoes: observacoes || undefined,
         status: 'PENDENTE',
+        statusPagamento,
       };
+
+      if (statusPagamento === 'PAGO') {
+        payload.formaPagamento = formaPagamento;
+        payload.valorPago = parseFloat(valorPago);
+      }
 
       if (mode === 'create') {
         await agendamentosAPI.create(payload);
@@ -150,9 +176,9 @@ export function AgendamentoFormModal({
 
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar agendamento:', error);
-      alert('Erro ao salvar agendamento. Tente novamente.');
+      alert(error.response?.data?.message || 'Erro ao salvar agendamento. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -321,9 +347,94 @@ export function AgendamentoFormModal({
                 />
               </div>
 
+              {/* Pagamento */}
+              <div className="border-t border-gray-200 pt-6">
+                <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">
+                  💳 Pagamento
+                </h4>
+
+                {/* Status Pagamento */}
+                <div className="mb-4">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    Status do Pagamento
+                  </label>
+                  <select
+                    value={statusPagamento}
+                    onChange={(e) => {
+                      setStatusPagamento(e.target.value);
+                      if (e.target.value !== 'PAGO') {
+                        setFormaPagamento('');
+                        setValorPago('');
+                      }
+                    }}
+                    className="w-full px-4 py-3 pr-10 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white appearance-none cursor-pointer"
+                    style={{
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                      backgroundPosition: 'right 0.75rem center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: '1.25rem'
+                    }}
+                  >
+                    <option value="PENDENTE">Pendente</option>
+                    <option value="PAGO">Pago</option>
+                    <option value="REEMBOLSADO">Reembolsado</option>
+                  </select>
+                </div>
+
+                {/* Forma de Pagamento - só aparece se PAGO */}
+                {statusPagamento === 'PAGO' && (
+                  <>
+                    <div className="mb-4">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        Forma de Pagamento *
+                      </label>
+                      <select
+                        value={formaPagamento}
+                        onChange={(e) => setFormaPagamento(e.target.value)}
+                        className="w-full px-4 py-3 pr-10 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none transition-all bg-white appearance-none cursor-pointer"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                          backgroundPosition: 'right 0.75rem center',
+                          backgroundRepeat: 'no-repeat',
+                          backgroundSize: '1.25rem'
+                        }}
+                        required
+                      >
+                        <option value="">Selecione a forma de pagamento</option>
+                        <option value="PIX">PIX</option>
+                        <option value="DINHEIRO">Dinheiro</option>
+                        <option value="CARTAO">Cartão de Crédito</option>
+                        <option value="DEBITO">Cartão de Débito</option>
+                      </select>
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        Valor Pago * (R$)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={valorPago}
+                        onChange={(e) => setValorPago(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                        required
+                      />
+                      {valorPago && valorTotal && parseFloat(valorPago) !== valorTotal && (
+                        <p className="text-sm text-orange-600 mt-1.5">
+                          ⚠ Valor diferente do total (R$ {valorTotal.toFixed(2)})
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
               {/* Valor Total */}
               {servicosSelecionados.length > 0 && (
-                <div className="bg-gradient-to-br from-blue-50 to-teal-50 rounded-lg p-4 border border-blue-200">
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 uppercase tracking-wide">
                       <DollarSign className="w-4 h-4" />

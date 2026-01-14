@@ -1,4 +1,4 @@
-import { IsString, IsDateString, IsOptional, IsEnum, MaxLength } from 'class-validator';
+import { IsString, IsDateString, IsOptional, IsEnum, MaxLength, IsNumber, Min, IsIn } from 'class-validator';
 
 enum StatusAgendamento {
   PENDENTE = 'PENDENTE',
@@ -26,4 +26,20 @@ export class UpdateAgendamentoDto {
   @IsString()
   @MaxLength(500)
   observacoes?: string;
+
+  // Payment fields
+  @IsOptional()
+  @IsString()
+  @IsIn(['PENDENTE', 'PAGO', 'REEMBOLSADO'])
+  statusPagamento?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['PIX', 'DINHEIRO', 'CARTAO', 'DEBITO'])
+  formaPagamento?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  valorPago?: number;
 }

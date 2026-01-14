@@ -7,7 +7,7 @@ import { StatusBadge, StatusType } from '@/components/ui/status-badge';
 import { BottomNav } from '@/components/bottom-nav';
 import { MobileAgendamentoCard } from '@/components/mobile-agendamento-card';
 import { agendamentosAPI } from '@/lib/api';
-import { ArrowLeft, Calendar, User, Car, Wrench } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Car, Wrench, DollarSign, CreditCard, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -16,6 +16,19 @@ const statusMap: Record<string, { type: StatusType; label: string }> = {
   CONFIRMADO: { type: 'confirmed', label: 'Confirmado' },
   CONCLUIDO: { type: 'completed', label: 'Concluído' },
   CANCELADO: { type: 'cancelled', label: 'Cancelado' },
+};
+
+const paymentStatusMap: Record<string, { color: string; icon: any; label: string }> = {
+  PAGO: { color: 'bg-green-100 text-green-700 border-green-200', icon: DollarSign, label: 'PAGO' },
+  PENDENTE: { color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: Clock, label: 'PENDENTE' },
+  REEMBOLSADO: { color: 'bg-gray-100 text-gray-700 border-gray-200', icon: CreditCard, label: 'REEMBOLSADO' },
+};
+
+const formaPagamentoMap: Record<string, string> = {
+  PIX: 'PIX',
+  DINHEIRO: 'Dinheiro',
+  CARTAO: 'Cartão',
+  DEBITO: 'Débito',
 };
 
 export default function AgendamentosPage() {
@@ -126,9 +139,35 @@ export default function AgendamentosPage() {
                           </div>
                         )}
                         <div className="pt-3 border-t border-gray-200">
-                          <p className="text-2xl font-bold text-gray-900">
-                            R$ {a.valorTotal?.toFixed(2) || '0.00'}
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-2xl font-bold text-gray-900">
+                                R$ {a.valorTotal?.toFixed(2) || '0.00'}
+                              </p>
+                              {a.statusPagamento && (
+                                <div className="mt-2 flex items-center gap-2">
+                                  {(() => {
+                                    const paymentInfo = paymentStatusMap[a.statusPagamento] || paymentStatusMap.PENDENTE;
+                                    const Icon = paymentInfo.icon;
+                                    return (
+                                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border ${paymentInfo.color}`}>
+                                        <Icon className="w-3.5 h-3.5" />
+                                        {paymentInfo.label}
+                                      </span>
+                                    );
+                                  })()}
+                                  {a.formaPagamento && a.statusPagamento === 'PAGO' && (
+                                    <span className="text-xs text-gray-600">via {formaPagamentoMap[a.formaPagamento] || a.formaPagamento}</span>
+                                  )}
+                                </div>
+                              )}
+                              {a.valorPago !== null && a.valorPago !== undefined && a.valorPago !== a.valorTotal && (
+                                <p className="text-sm text-orange-600 mt-1">
+                                  ⚠ Valor pago: R$ {a.valorPago.toFixed(2)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </ModernCardContent>
                     </ModernCard>

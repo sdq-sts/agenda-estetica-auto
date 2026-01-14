@@ -147,6 +147,13 @@ model Agendamento {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Payment fields
+  statusPagamento String?   @default("PENDENTE") // PENDENTE, PAGO, REEMBOLSADO
+  formaPagamento  String?   // PIX, DINHEIRO, CARTAO, DEBITO
+  valorPago       Float?
+  dataPagamento   DateTime?
+  comprovante     String?   // URL do comprovante (futuro)
+
   // Relations
   tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   cliente       Cliente              @relation(fields: [clienteId], references: [id], onDelete: Cascade)
@@ -157,6 +164,7 @@ model Agendamento {
   @@index([tenantId])
   @@index([dataHora])
   @@index([status])
+  @@index([statusPagamento])
   @@index([clienteId])
   @@index([veiculoId])
   @@map("agendamentos")

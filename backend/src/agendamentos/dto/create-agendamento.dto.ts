@@ -7,6 +7,7 @@ import {
   IsNumber,
   Min,
   MaxLength,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -39,4 +40,20 @@ export class CreateAgendamentoDto {
   @IsString()
   @MaxLength(500)
   observacoes?: string;
+
+  // Payment fields
+  @IsOptional()
+  @IsString()
+  @IsIn(['PENDENTE', 'PAGO', 'REEMBOLSADO'])
+  statusPagamento?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['PIX', 'DINHEIRO', 'CARTAO', 'DEBITO'])
+  formaPagamento?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  valorPago?: number;
 }

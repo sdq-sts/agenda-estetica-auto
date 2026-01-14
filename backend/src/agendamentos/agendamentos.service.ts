@@ -13,7 +13,7 @@ export class AgendamentosService {
   constructor(private prisma: PrismaService) {}
 
   async create(createAgendamentoDto: CreateAgendamentoDto, tenantId: string) {
-    const { clienteId, veiculoId, dataHora, servicos, observacoes } =
+    const { clienteId, veiculoId, dataHora, servicos, observacoes, statusPagamento, formaPagamento, valorPago } =
       createAgendamentoDto;
 
     // Validate cliente exists and belongs to tenant
@@ -92,6 +92,27 @@ export class AgendamentosService {
     // Calculate valor total
     const valorTotal = servicos.reduce((sum, s) => sum + s.preco, 0);
 
+    // Payment validations
+    if (statusPagamento === 'PAGO') {
+      if (!formaPagamento) {
+        throw new BadRequestException('Forma de pagamento é obrigatória quando status é PAGO');
+      }
+      if (valorPago === undefined || valorPago === null) {
+        throw new BadRequestException('Valor pago é obrigatório quando status é PAGO');
+      }
+      if (valorPago > valorTotal) {
+        throw new BadRequestException('Valor pago não pode ser maior que o valor total');
+      }
+    }
+
+    // Prepare payment data
+    const paymentData: any = {
+      statusPagamento: statusPagamento || 'PENDENTE',
+      formaPagamento,
+      valorPago,
+      dataPagamento: statusPagamento === 'PAGO' ? new Date() : null,
+    };
+
     // Create agendamento
     const agendamento = await this.prisma.agendamento.create({
       data: {
@@ -101,6 +122,7 @@ export class AgendamentosService {
         observacoes,
         valorTotal,
         tenantId,
+        ...paymentData,
         servicos: {
           create: servicos.map((s) => ({
             servicoId: s.servicoId,
@@ -254,7 +276,7 @@ export class AgendamentosService {
   }
 
   async update(id: string, updateAgendamentoDto: UpdateAgendamentoDto, tenantId: string) {
-    await this.findOne(id, tenantId);
+    const agendamento = await this.findOne(id, tenantId);
 
     // If updating dataHora, check for conflicts
     if (updateAgendamentoDto.dataHora) {
@@ -279,9 +301,32 @@ export class AgendamentosService {
       }
     }
 
+    // Payment validations
+    const statusPagamento = updateAgendamentoDto.statusPagamento || agendamento.statusPagamento;
+    const valorPago = updateAgendamentoDto.valorPago !== undefined ? updateAgendamentoDto.valorPago : agendamento.valorPago;
+    const formaPagamento = updateAgendamentoDto.formaPagamento || agendamento.formaPagamento;
+
+    if (statusPagamento === 'PAGO') {
+      if (!formaPagamento) {
+        throw new BadRequestException('Forma de pagamento é obrigatória quando status é PAGO');
+      }
+      if (valorPago === undefined || valorPago === null) {
+        throw new BadRequestException('Valor pago é obrigatório quando status é PAGO');
+      }
+      if (agendamento.valorTotal && valorPago > agendamento.valorTotal) {
+        throw new BadRequestException('Valor pago não pode ser maior que o valor total');
+      }
+    }
+
+    // Set dataPagamento if changing to PAGO
+    const updateData: any = { ...updateAgendamentoDto };
+    if (updateAgendamentoDto.statusPagamento === 'PAGO' && agendamento.statusPagamento !== 'PAGO') {
+      updateData.dataPagamento = new Date();
+    }
+
     return this.prisma.agendamento.update({
       where: { id },
-      data: updateAgendamentoDto,
+      data: updateData,
     });
   }
 
