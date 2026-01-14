@@ -18,7 +18,7 @@ SaaS para agendamento de estética automotiva (lava-jato). Stack:
 
 ## 🎨 Design System
 
-**CRITICAL:** Sempre seguir `DESIGN-SYSTEM.md`
+**CRITICAL:** Sempre seguir `docs/DESIGN-SYSTEM.md`
 
 ### Quick Reference:
 
@@ -48,7 +48,7 @@ shadow-lift              // Elevated
 container max-w-6xl px-6
 ```
 
-**Leia o arquivo completo:** `DESIGN-SYSTEM.md`
+**Leia o arquivo completo:** `docs/DESIGN-SYSTEM.md`
 
 ---
 
@@ -87,7 +87,7 @@ container max-w-6xl px-6
 ## 🔧 Arquivos Importantes
 
 ### Para Design/Frontend:
-- **`DESIGN-SYSTEM.md`** ⭐ - Design system completo (SEMPRE seguir)
+- **`docs/DESIGN-SYSTEM.md`** ⭐ - Design system completo (SEMPRE seguir)
 - `docs/architecture/ARCHITECTURE.md` - Arquitetura geral
 - `frontend/tailwind.config.ts` - Tema Tailwind
 - `frontend/app/globals.css` - Utilidades CSS custom

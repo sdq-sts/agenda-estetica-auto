@@ -29,8 +29,8 @@ npm run dev
 ## Documentação
 
 - **[CLAUDE.md](./CLAUDE.md)** - Context principal para desenvolvimento
-- **[DESIGN-SYSTEM.md](./DESIGN-SYSTEM.md)** - Design system completo
 - **[PRODUTO.md](./PRODUTO.md)** - Roadmap e funcionalidades
+- **[docs/DESIGN-SYSTEM.md](./docs/DESIGN-SYSTEM.md)** - Design system completo
 - **[docs/SETUP-GUIDE.md](./docs/SETUP-GUIDE.md)** - Guia detalhado de setup
 - **[docs/api/API-SPEC.md](./docs/api/API-SPEC.md)** - Especificação da API
 - **[docs/architecture/ARCHITECTURE.md](./docs/architecture/ARCHITECTURE.md)** - Arquitetura do sistema
