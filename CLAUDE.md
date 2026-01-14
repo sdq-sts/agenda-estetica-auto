@@ -88,18 +88,18 @@ container max-w-6xl px-6
 
 ### Para Design/Frontend:
 - **`DESIGN-SYSTEM.md`** ⭐ - Design system completo (SEMPRE seguir)
-- `ARCHITECTURE.md` - Arquitetura geral
+- `docs/architecture/ARCHITECTURE.md` - Arquitetura geral
 - `frontend/tailwind.config.ts` - Tema Tailwind
 - `frontend/app/globals.css` - Utilidades CSS custom
 
 ### Para Backend/API:
-- **`API-SPEC.md`** - Especificação da API
+- **`docs/api/API-SPEC.md`** - Especificação da API
 - `backend/prisma/schema.prisma` - Schema do banco
-- `ARCHITECTURE.md` - Estrutura dos módulos
+- `docs/architecture/ARCHITECTURE.md` - Estrutura dos módulos
 
 ### Setup:
-- `SETUP-GUIDE.md` - Como rodar o projeto
-- `REQUIREMENTS.md` - Requisitos e funcionalidades
+- `docs/SETUP-GUIDE.md` - Como rodar o projeto
+- `PRODUTO.md` - Roadmap e funcionalidades
 
 ---
 
