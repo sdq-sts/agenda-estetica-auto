@@ -12,7 +12,13 @@ async function bootstrap() {
 
   // CORS configuration
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://datlahaapp.vercel.app',
+      'https://datlaha-gu55fmntc-sadraque-santos-projects.vercel.app',
+      /https:\/\/.*\.vercel\.app$/, // Todos os previews do Vercel
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
