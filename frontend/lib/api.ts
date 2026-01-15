@@ -1,8 +1,6 @@
 import { auth } from './auth';
 
-const API_URL = typeof window !== 'undefined'
-  ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333'}/api`
-  : 'http://localhost:3333/api';
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333'}/api`;
 
 async function fetchAPI(endpoint: string, options?: RequestInit) {
   // Get auth header
