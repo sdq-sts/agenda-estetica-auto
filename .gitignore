@@ -35,7 +35,7 @@ yarn-error.log*
 Thumbs.db
 
 # Prisma
-backend/prisma/migrations/
+# backend/prisma/migrations/ - COMENTADO: migrations devem ser versionadas
 
 # Temporary files
 *.tmp
