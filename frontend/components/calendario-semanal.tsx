@@ -25,6 +25,7 @@ interface AgendamentoEvent extends Event {
     servicosInfo?: string;
     valorTotal?: number;
     observacoes?: string;
+    isBloqueio?: boolean;
   };
 }
 
@@ -52,7 +53,7 @@ const messages = {
 };
 
 // Custom Toolbar - Compacta para mobile
-function CustomToolbar({ label, onNavigate, onView, view }: ToolbarProps) {
+function CustomToolbar({ label, onNavigate, onView, view }: ToolbarProps<AgendamentoEvent, object>) {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   return (

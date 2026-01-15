@@ -34,6 +34,7 @@ interface AgendamentoEvent {
     servicosInfo?: string;
     valorTotal?: number;
     observacoes?: string;
+    isBloqueio?: boolean;
   };
 }
 
@@ -177,7 +178,7 @@ export default function CalendarioPage() {
   function handleSelectEvent(event: AgendamentoEvent) {
     // Não abrir modal de detalhes se for um bloqueio
     if (event.resource.isBloqueio) {
-      setToast({ message: 'Este é um bloqueio de horário. Gerencie bloqueios em Configurações.', type: 'info' });
+      setToast({ message: 'Este é um bloqueio de horário. Gerencie bloqueios em Configurações.', type: 'success' });
       return;
     }
     setSelectedEvent(event);

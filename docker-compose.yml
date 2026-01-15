@@ -45,11 +45,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-      - /app/dist
-    command: npm run start:dev
 
   # Evolution API (WhatsApp)
   evolution:
@@ -69,8 +64,9 @@ services:
 
       # Database (usa o mesmo PostgreSQL)
       DATABASE_ENABLED: true
+      DATABASE_PROVIDER: postgresql
       DATABASE_CONNECTION_URI: postgresql://postgres:postgres@postgres:5432/evolution
-      DATABASE_CONNECTION_CLIENT_NAME: evolution_db
+      DATABASE_CONNECTION_CLIENT_NAME: postgresql
       DATABASE_SAVE_DATA_INSTANCE: true
       DATABASE_SAVE_DATA_NEW_MESSAGE: true
       DATABASE_SAVE_MESSAGE_UPDATE: true
@@ -118,11 +114,6 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:3333
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    command: npm run dev
 
 volumes:
   postgres_data:

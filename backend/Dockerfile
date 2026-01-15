@@ -1,5 +1,5 @@
 # Base stage - prepare dependencies
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
 WORKDIR /app
 
 # Install production dependencies
@@ -7,8 +7,11 @@ COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 # Builder stage - build the application
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
@@ -27,8 +30,11 @@ RUN npx prisma generate
 RUN npm run build
 
 # Production stage - run the application
-FROM node:20-alpine AS production
+FROM node:20-slim AS production
 WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Copy production dependencies from base
 COPY --from=base /app/node_modules ./node_modules
@@ -42,8 +48,7 @@ COPY prisma ./prisma
 COPY package*.json ./
 
 # Create a non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nestjs -u 1001
+RUN groupadd -r nodejs && useradd -r -g nodejs nestjs
 
 USER nestjs
 
