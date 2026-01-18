@@ -12,6 +12,79 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 export class AgendamentosService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Verifica se um horário está bloqueado
+   */
+  private async checkBloqueio(
+    dataHora: Date,
+    duracaoMinutos: number,
+    tenantId: string,
+  ): Promise<boolean> {
+    const endTime = new Date(dataHora.getTime() + duracaoMinutos * 60 * 1000);
+    const diaSemana = dataHora.getDay(); // 0-6 (domingo-sábado)
+    const horaInicio = `${String(dataHora.getHours()).padStart(2, '0')}:${String(dataHora.getMinutes()).padStart(2, '0')}`;
+
+    // Buscar bloqueios pontuais para a data específica
+    const bloqueiosPontuais = await this.prisma.bloqueioHorario.findMany({
+      where: {
+        tenantId,
+        ativo: true,
+        tipo: 'PONTUAL',
+        dataEspecifica: {
+          gte: new Date(dataHora.toDateString()), // início do dia
+          lt: new Date(new Date(dataHora.toDateString()).getTime() + 24 * 60 * 60 * 1000), // fim do dia
+        },
+      },
+    });
+
+    // Buscar bloqueios recorrentes para o dia da semana
+    const bloqueiosRecorrentes = await this.prisma.bloqueioHorario.findMany({
+      where: {
+        tenantId,
+        ativo: true,
+        tipo: 'RECORRENTE',
+        diaSemana,
+      },
+    });
+
+    const todosBloqueios = [...bloqueiosPontuais, ...bloqueiosRecorrentes];
+
+    // Verificar se há conflito com algum bloqueio
+    for (const bloqueio of todosBloqueios) {
+      // Se bloqueio é dia inteiro, sempre conflita
+      if (bloqueio.diaInteiro) {
+        return true;
+      }
+
+      // Comparar horários (formato HH:mm)
+      const bloqueioHoraInicio = bloqueio.horaInicio;
+      const bloqueioHoraFim = bloqueio.horaFim;
+
+      // Converter para minutos desde meia-noite para facilitar comparação
+      const toMinutes = (time: string) => {
+        const [h, m] = time.split(':').map(Number);
+        return h * 60 + m;
+      };
+
+      const agendamentoInicioMin = toMinutes(horaInicio);
+      const agendamentoFimMin = agendamentoInicioMin + duracaoMinutos;
+      const bloqueioInicioMin = toMinutes(bloqueioHoraInicio);
+      const bloqueioFimMin = toMinutes(bloqueioHoraFim);
+
+      // Verificar overlap
+      const hasOverlap =
+        (agendamentoInicioMin >= bloqueioInicioMin && agendamentoInicioMin < bloqueioFimMin) ||
+        (agendamentoFimMin > bloqueioInicioMin && agendamentoFimMin <= bloqueioFimMin) ||
+        (agendamentoInicioMin <= bloqueioInicioMin && agendamentoFimMin >= bloqueioFimMin);
+
+      if (hasOverlap) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   async create(createAgendamentoDto: CreateAgendamentoDto, tenantId: string) {
     const { clienteId, veiculoId, dataHora, servicos, observacoes, statusPagamento, formaPagamento, valorPago } =
       createAgendamentoDto;
@@ -67,6 +140,12 @@ export class AgendamentosService {
       (sum, s) => sum + s.duracaoMinutos,
       0,
     );
+
+    // Check for blocked time
+    const isBloqueado = await this.checkBloqueio(dataHoraDate, duracaoTotal, tenantId);
+    if (isBloqueado) {
+      throw new BadRequestException('Horário bloqueado. Escolha outro horário disponível.');
+    }
 
     // Check for time conflicts (only within same tenant)
     const endTime = new Date(
@@ -244,6 +323,7 @@ export class AgendamentosService {
     const startHour = 8;
     const endHour = 18;
     const intervalMinutes = 30;
+    const duracaoPadrao = 60; // Assume 1 hour default duration for checking
 
     for (let hour = startHour; hour < endHour; hour++) {
       for (let minute = 0; minute < 60; minute += intervalMinutes) {
@@ -252,6 +332,12 @@ export class AgendamentosService {
 
         // Skip past times
         if (horario < new Date()) {
+          continue;
+        }
+
+        // Check for blocked time
+        const isBloqueado = await this.checkBloqueio(horario, duracaoPadrao, tenantId);
+        if (isBloqueado) {
           continue;
         }
 
@@ -283,6 +369,22 @@ export class AgendamentosService {
       const dataHoraDate = new Date(updateAgendamentoDto.dataHora);
       if (dataHoraDate < new Date()) {
         throw new BadRequestException('Data/hora deve ser futura');
+      }
+
+      // Calculate total duration from existing services
+      const servicosIds = agendamento.servicos.map((s: any) => s.servicoId);
+      const servicosData = await this.prisma.servico.findMany({
+        where: { id: { in: servicosIds } },
+      });
+      const duracaoTotal = servicosData.reduce(
+        (sum, s) => sum + s.duracaoMinutos,
+        0,
+      );
+
+      // Check for blocked time
+      const isBloqueado = await this.checkBloqueio(dataHoraDate, duracaoTotal, tenantId);
+      if (isBloqueado) {
+        throw new BadRequestException('Horário bloqueado. Escolha outro horário disponível.');
       }
 
       const conflito = await this.prisma.agendamento.findFirst({

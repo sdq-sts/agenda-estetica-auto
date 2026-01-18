@@ -70,6 +70,9 @@ export function AgendamentoFormModal({
   const [formaPagamento, setFormaPagamento] = useState<string>('');
   const [valorPago, setValorPago] = useState<string>('');
 
+  // Error state
+  const [errorMessage, setErrorMessage] = useState<string>('');
+
   // Load initial data
   useEffect(() => {
     if (isOpen) {
@@ -129,20 +132,21 @@ export function AgendamentoFormModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setErrorMessage(''); // Clear previous errors
 
     if (!clienteId || !veiculoId || servicosSelecionados.length === 0) {
-      alert('Preencha todos os campos obrigatórios');
+      setErrorMessage('Preencha todos os campos obrigatórios');
       return;
     }
 
     // Validate payment fields
     if (statusPagamento === 'PAGO') {
       if (!formaPagamento) {
-        alert('Selecione a forma de pagamento');
+        setErrorMessage('Selecione a forma de pagamento');
         return;
       }
       if (!valorPago || parseFloat(valorPago) <= 0) {
-        alert('Informe o valor pago');
+        setErrorMessage('Informe o valor pago');
         return;
       }
     }
@@ -178,7 +182,8 @@ export function AgendamentoFormModal({
       onClose();
     } catch (error: any) {
       console.error('Erro ao salvar agendamento:', error);
-      alert(error.response?.data?.message || 'Erro ao salvar agendamento. Tente novamente.');
+      const message = error.response?.data?.message || 'Erro ao salvar agendamento. Tente novamente.';
+      setErrorMessage(message);
     } finally {
       setLoading(false);
     }
@@ -219,6 +224,32 @@ export function AgendamentoFormModal({
                 <X className="w-5 h-5" />
               </Button>
             </div>
+
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 animate-shake">
+                <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-red-800 mb-1">
+                    Erro ao salvar agendamento
+                  </h4>
+                  <p className="text-sm text-red-700">
+                    {errorMessage}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setErrorMessage('')}
+                  className="flex-shrink-0 text-red-400 hover:text-red-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
 
             {/* Form Fields */}
             <div className="space-y-6">

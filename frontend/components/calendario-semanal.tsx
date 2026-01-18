@@ -26,6 +26,9 @@ interface AgendamentoEvent extends Event {
     valorTotal?: number;
     observacoes?: string;
     isBloqueio?: boolean;
+    statusPagamento?: string;
+    formaPagamento?: string;
+    valorPago?: number;
   };
 }
 

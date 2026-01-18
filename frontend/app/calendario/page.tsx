@@ -35,6 +35,9 @@ interface AgendamentoEvent {
     valorTotal?: number;
     observacoes?: string;
     isBloqueio?: boolean;
+    statusPagamento?: string;
+    formaPagamento?: string;
+    valorPago?: number;
   };
 }
 
@@ -105,23 +108,36 @@ export default function CalendarioPage() {
           const dataHora = new Date(a.dataHora);
           const dataFim = new Date(dataHora);
 
-          // Duração estimada: 1 hora (pode ser ajustado conforme duração dos serviços)
-          dataFim.setHours(dataHora.getHours() + 1);
+          // Calcular duração real: somar duração de todos os serviços
+          const duracaoTotal = a.servicos?.reduce((total: number, s: any) => {
+            return total + (s.servico?.duracaoMinutos || 60); // default 60 min se não tiver duração
+          }, 0) || 60; // default 60 min se não tiver serviços
+
+          // Adicionar duração em minutos ao horário de início
+          dataFim.setMinutes(dataHora.getMinutes() + duracaoTotal);
+
+          // Adicionar badge de pagamento no título
+          const statusPag = a.statusPagamento || 'PENDENTE';
+          const badgePagamento = statusPag === 'PAGO' ? ' ✓' : statusPag === 'PENDENTE' ? ' ⏳' : '';
+          const clienteNome = a.cliente?.nome || 'Cliente não informado';
 
           return {
             id: a.id,
-            title: a.cliente?.nome || 'Cliente não informado',
+            title: clienteNome + badgePagamento,
             start: dataHora,
             end: dataFim,
             resource: {
               status: a.status || 'PENDENTE',
-              clienteNome: a.cliente?.nome || 'Cliente não informado',
+              clienteNome,
               veiculoInfo: a.veiculo
                 ? `${a.veiculo.marca} ${a.veiculo.modelo} - ${a.veiculo.placa}`
                 : undefined,
               servicosInfo: a.servicos?.map((s: any) => s.servico?.nome || 'Serviço').join(', '),
               valorTotal: a.valorTotal,
               observacoes: a.observacoes,
+              statusPagamento: a.statusPagamento,
+              formaPagamento: a.formaPagamento,
+              valorPago: a.valorPago,
             },
           };
         });
@@ -547,6 +563,41 @@ export default function CalendarioPage() {
                       <p className="text-2xl font-outfit font-bold text-gray-900">
                         R$ {selectedEvent.resource.valorTotal.toFixed(2)}
                       </p>
+                    </div>
+                  )}
+
+                  {/* Status de Pagamento */}
+                  {selectedEvent.resource.statusPagamento && (
+                    <div className="pt-3 border-t border-gray-200">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        Pagamento
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {selectedEvent.resource.statusPagamento === 'PAGO' ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-semibold">
+                            <span className="text-base">✓</span>
+                            Pago
+                          </span>
+                        ) : selectedEvent.resource.statusPagamento === 'PENDENTE' ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm font-semibold">
+                            <span className="text-base">⏳</span>
+                            Aguardando Pagamento
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm font-semibold">
+                            <span className="text-base">↩</span>
+                            Reembolsado
+                          </span>
+                        )}
+                      </div>
+                      {selectedEvent.resource.statusPagamento === 'PAGO' && selectedEvent.resource.formaPagamento && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          <strong>Forma:</strong> {selectedEvent.resource.formaPagamento}
+                          {selectedEvent.resource.valorPago && (
+                            <> • <strong>Valor:</strong> R$ {selectedEvent.resource.valorPago.toFixed(2)}</>
+                          )}
+                        </p>
+                      )}
                     </div>
                   )}
 
